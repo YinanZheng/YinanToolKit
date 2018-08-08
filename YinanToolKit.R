@@ -20,3 +20,20 @@ descript <- function(dat, var, type = "continuous", digit = 1)
   }
   res
 }
+
+IQRoutliers <- function(dat)
+{
+  iqr <- IQR(dat, na.rm = T)
+  q <- quantile(dat, c(0.25, 0.75), na.rm = T)
+  firstQ <- q[1]
+  thirdQ <- q[2]
+  outInd <- which(dat < firstQ - 3*iqr | dat > thirdQ + 3*iqr)
+  if(length(outInd) > 0)
+  {
+    print(paste0(length(outInd), " outliers found!"))
+    dat[outInd] <- NA
+  } else {
+    print("No outlier!")
+  }
+  return(dat)
+}

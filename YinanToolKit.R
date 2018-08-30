@@ -1,3 +1,5 @@
+
+## Produce descriptive table
 descript <- function(dat, var, type = "continuous", digit = 1)
 {
   d <- eval(parse(text = paste0("dat$", var)))
@@ -21,6 +23,7 @@ descript <- function(dat, var, type = "continuous", digit = 1)
   res
 }
 
+## Remove outliers using IQR rule
 IQRoutliers <- function(dat)
 {
   iqr <- IQR(dat, na.rm = T)
@@ -34,6 +37,15 @@ IQRoutliers <- function(dat)
     dat[outInd] <- NA
   } else {
     print("No outlier!")
+  }
+  return(dat)
+}
+
+## Impute missing with mean- row is variable (CpG methylation), column is sample
+impute_w_rowMean <- function(dat){
+  dat <- data.frame(dat)
+  for(i in 1:nrow(dat)){
+    dat[i, is.na(dat[i, ])] <- mean(as.numeric(dat[i,]), na.rm = TRUE)
   }
   return(dat)
 }

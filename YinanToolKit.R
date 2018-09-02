@@ -49,3 +49,44 @@ impute_w_rowMean <- function(dat){
   }
   return(dat)
 }
+
+### lmCat toolkit function
+lmCatCheck <- function(res, nlevel)
+{
+  cpglist <- unique(res$CpG)
+  cpglist_bad <- cpglist[which(table(res$CpG) != nlevel)]
+  if(length(cpglist_bad) == 0) message(paste0("All CpGs have ", nlevel, " groups tested.")) 
+  else message(paste0("The following CpGs have less than ", nlevel, "group tested: ", paste0(cpglist_bad, collapse = ", ")))
+}
+
+lmCatSig <- function(res, sigcut, useFDR = TRUE)
+{ 
+  if(useFDR)
+  {
+    sigCpG <- na.omit(res[, c("CpG", "qvalue")])
+    sigCpG <- subset(sigCpG, qvalue<sigcut)
+    sigCpG <- as.character(sigCpG$CpG[order(sigCpG$qvalue)])
+    mind <- match(res$CpG, sigCpG)
+    res <- res[intersect(order(mind), which(!is.na(mind))), ]
+  } else{
+    sigCpG <- na.omit(res[, c("CpG", "TypeII_Pvalue")])
+    sigCpG <- subset(sigCpG, TypeII_Pvalue<sigcut)
+    sigCpG <- as.character(sigCpG$CpG[order(sigCpG$TypeII_Pvalue)])
+    mind <- match(res$CpG, sigCpG)
+    res <- res[intersect(order(mind), which(!is.na(mind))), ]
+  }
+  res
+}
+
+lmCatGetAnova <- function(res)
+{
+  res_anova <- res[which(res$Group == ""),]
+  res_anova <- res_anova[, -c(2:6, 10:33)]
+  res_anova
+}
+
+lmCatGetGroup <- function(res)
+{
+  res <- res[, -c(7:9, 34:35)]
+  res
+}

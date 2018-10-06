@@ -43,7 +43,7 @@ IQRoutliers <- function(dat)
 
 ## Impute missing with mean- row is variable (CpG methylation), column is sample
 impute_w_rowMean <- function(dat){
-  dat <- data.frame(dat)
+  dat <- data.frame(dat, check.names = FALSE)
   for(i in 1:nrow(dat)){
     dat[i, is.na(dat[i, ])] <- mean(as.numeric(dat[i,]), na.rm = TRUE)
   }

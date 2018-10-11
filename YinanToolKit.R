@@ -121,6 +121,7 @@ geneInDB <- function(geneList, geneList_alias, TotalGeneList)
 getGeneSubset <- function(res, geneList, 
                           array = c("EPIC","450K"), 
                           geneDB = c("UCSC", "GENCODE", "BOTH"),
+                          promoter = FALSE,
                           FDR = TRUE)
 {
   library(org.Hs.eg.db)
@@ -158,12 +159,16 @@ getGeneSubset <- function(res, geneList,
   totalGeneList_UCSC <- unique(unlist(strsplit(annot$UCSC_RefGene_Name, ";")))
   totalGeneList_GENCODE <- unique(unlist(strsplit(annot$GencodeCompV12_NAME, ";")))
   
+  promoter_UCSC <- grep("TSS1500|TSS200|5'UTR|1stExon", annot$UCSC_RefGene_Group)
+  promoter_GENCODE <- grep("TSS1500|TSS200|5'UTR|1stExon", annot$GencodeCompV12_Group)
+  
   if(geneDB == "UCSC")
   {
     message("Using UCSC gene DB...")
     geneList_UCSC_FINAL <- geneInDB(geneList, geneList_alias, totalGeneList_UCSC)
     geneList_grep <- paste0("\\b", paste0(geneList_UCSC_FINAL, collapse = "\\b|\\b"), "\\b")
     ind <- grep(geneList_grep, toupper(annot$UCSC_RefGene_Name))
+    if(promoter) {message("Note: Promoter only."); ind <- intersect(ind, promoter_UCSC)}
   }
   if(geneDB == "GENCODE")
   {
@@ -171,6 +176,7 @@ getGeneSubset <- function(res, geneList,
     geneList_GENCODE_FINAL <- geneInDB(geneList, geneList_alias, totalGeneList_GENCODE)
     geneList_grep <- paste0("\\b", paste0(geneList_GENCODE_FINAL, collapse = "\\b|\\b"), "\\b")
     ind <- grep(geneList_grep, toupper(annot$GencodeCompV12_NAME))
+    if(promoter) {message("Note: Promoter only."); ind <- intersect(ind, promoter_GENCODE)}
   }
   if(geneDB == "BOTH")
   {
@@ -185,6 +191,7 @@ getGeneSubset <- function(res, geneList,
     ind1 <- grep(geneList_UCSC_grep, toupper(annot$UCSC_RefGene_Name))
     ind2 <- grep(geneList_GENCODE_grep, toupper(annot$GencodeCompV12_NAME))
     ind <- union(ind1, ind2)
+    if(promoter) {message("Note: Promoter only."); ind <- intersect(ind, union(promoter_UCSC, promoter_GENCODE))}
   }
   
   res_sub <- res[ind,]
@@ -196,5 +203,9 @@ getGeneSubset <- function(res, geneList,
   }
   
   res_sub <- cbind(res_sub, annot_sub)
+  
+  res_sub <- res_sub[order(res_sub$Pvalue),]
+  
   return(res_sub)
 }
+

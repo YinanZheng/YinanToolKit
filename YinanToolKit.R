@@ -97,24 +97,25 @@ geneInDB <- function(geneList, geneList_alias, TotalGeneList)
 {
   if(all(geneList %in% TotalGeneList)) 
   {
-    message("All genes are covered!")
+    message("    All genes are covered!")
   } else {
     notinDB <- which(!geneList %in% TotalGeneList)
     notinDB_Gene <- geneList[notinDB]
-    message(paste0(paste0(notinDB_Gene, collapse = ", ")), " are not covered!")
+    message(paste0("    ", paste0(notinDB_Gene, collapse = ", ")), " are not covered!")
     if(all(geneList_alias[notinDB] %in% TotalGeneList))
     {
-      message(paste0("But their alias, ", paste0(geneList_alias[notinDB], collapse = ", "), " are covered!"))
+      message(paste0("    But their alias, ", paste0(geneList_alias[notinDB], collapse = ", "), " are covered!"))
       geneList[notinDB] <- geneList_alias[notinDB]
     } else {
       notinDB_alias <- which(!geneList_alias[notinDB] %in% TotalGeneList)
       notinDB_alias_Gene <- geneList_alias[notinDB][notinDB_alias]
       notinDB_Gene <- geneList[notinDB][notinDB_alias]
-      message(paste0("The alias, ", paste0(notinDB_alias_Gene, collapse = ", "), " of ", paste0(geneList[notinDB][notinDB_alias], collapse = ", "), ", are still not covered!"))
+      message(paste0("    The alias, ", paste0(notinDB_alias_Gene, collapse = ", "), " of ", paste0(geneList[notinDB][notinDB_alias], collapse = ", "), ", are still not covered!"))
       inDB_alias <- which(geneList_alias[notinDB] %in% TotalGeneList)
       geneList[notinDB][inDB_alias] <- geneList_alias[notinDB][inDB_alias]
     }
   }
+  message(paste0("    Final working gene list: ", paste0(geneList, collapse = ", ")))
   return(geneList)
 }
 
@@ -133,7 +134,7 @@ getGeneSubset <- function(res, geneList,
   dbCon <- org.Hs.eg_dbconn()
   sqlQuery <- 'SELECT * FROM alias, gene_info WHERE alias._id == gene_info._id;'
   aliasSymbol <- dbGetQuery(dbCon, sqlQuery)
-  geneList_alias <- aliasSymbol[which(aliasSymbol[,2] %in% geneList),5]
+  geneList_alias <- aliasSymbol[match(geneList, aliasSymbol[,2]),5]
   
   if(length(geneList_alias) != length(geneList)) stop("Something wrong. Check gene symbol!")
   

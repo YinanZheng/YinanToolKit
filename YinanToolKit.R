@@ -90,3 +90,111 @@ lmCatGetGroup <- function(res)
   res <- res[, -c(7:9, 34:35)]
   res
 }
+
+
+### Subset EWAS results by gene
+geneInDB <- function(geneList, geneList_alias, TotalGeneList)
+{
+  if(all(geneList %in% TotalGeneList)) 
+  {
+    message("All genes are covered!")
+  } else {
+    notinDB <- which(!geneList %in% TotalGeneList)
+    notinDB_Gene <- geneList[notinDB]
+    message(paste0(paste0(notinDB_Gene, collapse = ", ")), " are not covered!")
+    if(all(geneList_alias[notinDB] %in% TotalGeneList))
+    {
+      message(paste0("But their alias, ", paste0(geneList_alias[notinDB], collapse = ", "), " are covered!"))
+      geneList[notinDB] <- geneList_alias[notinDB]
+    } else {
+      notinDB_alias <- which(!geneList_alias[notinDB] %in% TotalGeneList)
+      notinDB_alias_Gene <- geneList_alias[notinDB][notinDB_alias]
+      notinDB_Gene <- geneList[notinDB][notinDB_alias]
+      message(paste0("The alias, ", paste0(notinDB_alias_Gene, collapse = ", "), " of ", paste0(geneList[notinDB][notinDB_alias], collapse = ", "), ", are still not covered!"))
+      inDB_alias <- which(geneList_alias[notinDB] %in% TotalGeneList)
+      geneList[notinDB][inDB_alias] <- geneList_alias[notinDB][inDB_alias]
+    }
+  }
+  return(geneList)
+}
+
+getGeneSubset <- function(res, geneList, 
+                          array = c("EPIC","450K"), 
+                          geneDB = c("UCSC", "GENCODE", "BOTH"),
+                          FDR = TRUE)
+{
+  library(org.Hs.eg.db)
+  library(DBI)
+  
+  array <- match.arg(array)
+  geneDB <- match.arg(geneDB)
+  
+  dbCon <- org.Hs.eg_dbconn()
+  sqlQuery <- 'SELECT * FROM alias, gene_info WHERE alias._id == gene_info._id;'
+  aliasSymbol <- dbGetQuery(dbCon, sqlQuery)
+  geneList_alias <- aliasSymbol[which(aliasSymbol[,2] %in% geneList),5]
+  
+  if(length(geneList_alias) != length(geneList)) stop("Something wrong. Check gene symbol!")
+  
+  geneList <- toupper(geneList)
+  geneList_alias <- toupper(geneList_alias)
+
+  if(array == "EPIC")
+  {
+    message("Loading EPIC annotation...")
+    library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+    annot <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+    annot <- annot[match(rownames(res), annot$Name),]
+  }
+  
+  if(array == "450K")
+  {
+    message("Loading 450K annotation...")
+    library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+    annot <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+    annot <- annot[match(rownames(res), annot$Name),]
+  }
+  
+  totalGeneList_UCSC <- unique(unlist(strsplit(annot$UCSC_RefGene_Name, ";")))
+  totalGeneList_GENCODE <- unique(unlist(strsplit(annot$GencodeCompV12_NAME, ";")))
+  
+  if(geneDB == "UCSC")
+  {
+    message("Using UCSC gene DB...")
+    geneList_UCSC_FINAL <- geneInDB(geneList, geneList_alias, totalGeneList_UCSC)
+    geneList_grep <- paste0("\\b", paste0(geneList_UCSC_FINAL, collapse = "\\b|\\b"), "\\b")
+    ind <- grep(geneList_grep, toupper(annot$UCSC_RefGene_Name))
+  }
+  if(geneDB == "GENCODE")
+  {
+    message("Using GENCODE gene DB...")
+    geneList_GENCODE_FINAL <- geneInDB(geneList, geneList_alias, totalGeneList_GENCODE)
+    geneList_grep <- paste0("\\b", paste0(geneList_GENCODE_FINAL, collapse = "\\b|\\b"), "\\b")
+    ind <- grep(geneList_grep, toupper(annot$GencodeCompV12_NAME))
+  }
+  if(geneDB == "BOTH")
+  {
+    message("Using UCSC gene DB...")
+    geneList_UCSC_FINAL <- geneInDB(geneList, geneList_alias, totalGeneList_UCSC)
+    geneList_UCSC_grep <- paste0("\\b", paste0(geneList_UCSC_FINAL, collapse = "\\b|\\b"), "\\b")
+    
+    message("Using GENCODE gene DB...")
+    geneList_GENCODE_FINAL <- geneInDB(geneList, geneList_alias, totalGeneList_GENCODE)
+    geneList_GENCODE_grep <- paste0("\\b", paste0(geneList_GENCODE_FINAL, collapse = "\\b|\\b"), "\\b")
+    
+    ind1 <- grep(geneList_UCSC_grep, toupper(annot$UCSC_RefGene_Name))
+    ind2 <- grep(geneList_GENCODE_grep, toupper(annot$GencodeCompV12_NAME))
+    ind <- union(ind1, ind2)
+  }
+  
+  res_sub <- res[ind,]
+  annot_sub <- annot[ind,]
+  
+  if(FDR)
+  {
+    res_sub$FDR <- p.adjust(res_sub$Pvalue)
+  }
+  
+  res_sub <- cbind(res_sub, annot_sub)
+  return(res_sub)
+}

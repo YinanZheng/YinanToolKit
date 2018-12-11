@@ -115,16 +115,17 @@ geneInDB <- function(geneList, geneList_alias, TotalGeneList)
       geneList[notinDB][inDB_alias] <- geneList_alias[notinDB][inDB_alias]
     }
   }
-  message(paste0("    Final working gene list: ", paste0(geneList, collapse = ", ")))
+  message(paste0("    Final working gene list (", length(geneList), "): ", paste0(geneList, collapse = ", ")))
   return(geneList)
 }
 
 getGeneSubset <- function(res, geneList, 
-                          array = c("EPIC","450K"), 
-                          geneDB = c("UCSC", "GENCODE", "BOTH"),
-                          promoter = FALSE,
-                          FDR = TRUE)
+         array = c("EPIC","450K"), 
+         geneDB = c("UCSC", "GENCODE", "BOTH"),
+         promoter = FALSE,
+         FDR = TRUE)
 {
+  res <- as.data.frame(res, check.names = FALSE)
   library(org.Hs.eg.db)
   library(DBI)
   
@@ -140,10 +141,10 @@ getGeneSubset <- function(res, geneList,
   
   geneList <- toupper(geneList)
   geneList_alias <- toupper(geneList_alias)
-
+  
   if(array == "EPIC")
   {
-    message("Loading EPIC annotation...")
+    message("Loading EPIC annotation IlluminaHumanMethylationEPICanno.ilm10b4.hg19...")
     library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
     annot <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
     annot <- annot[match(rownames(res), annot$Name),]
@@ -151,14 +152,14 @@ getGeneSubset <- function(res, geneList,
   
   if(array == "450K")
   {
-    message("Loading 450K annotation...")
+    message("Loading 450K annotation IlluminaHumanMethylation450kanno.ilmn12.hg19...")
     library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
     annot <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
     annot <- annot[match(rownames(res), annot$Name),]
   }
   
-  totalGeneList_UCSC <- unique(unlist(strsplit(annot$UCSC_RefGene_Name, ";")))
-  totalGeneList_GENCODE <- unique(unlist(strsplit(annot$GencodeCompV12_NAME, ";")))
+  totalGeneList_UCSC <- toupper(unique(unlist(strsplit(annot$UCSC_RefGene_Name, ";"))))
+  totalGeneList_GENCODE <- toupper(unique(unlist(strsplit(annot$GencodeCompV12_NAME, ";"))))
   
   promoter_UCSC <- grep("TSS1500|TSS200|5'UTR|1stExon", annot$UCSC_RefGene_Group)
   promoter_GENCODE <- grep("TSS1500|TSS200|5'UTR|1stExon", annot$GencodeCompV12_Group)

@@ -144,8 +144,8 @@ getGeneSubset <- function(res, geneList,
   if(array == "EPIC")
   {
     message("Loading EPIC annotation...")
-    library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
-    annot <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+    library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+    annot <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
     annot <- annot[match(rownames(res), annot$Name),]
   }
   

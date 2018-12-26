@@ -92,7 +92,8 @@ lmCatGetGroup <- function(res)
 }
 
 
-### Subset EWAS results by gene
+### Subset EWAS results or Methylation data by gene
+# Note: either EWAS or Methylation must of CpG ID as the row names!
 geneInDB <- function(geneList, geneList_alias, TotalGeneList)
 {
   if(all(geneList %in% TotalGeneList)) 
@@ -120,15 +121,19 @@ geneInDB <- function(geneList, geneList_alias, TotalGeneList)
 }
 
 getGeneSubset <- function(res, geneList, 
-         array = c("EPIC","450K"), 
-         geneDB = c("UCSC", "GENCODE", "BOTH"),
-         promoter = FALSE,
-         FDR = TRUE)
+                          input = c("EWAS", "METHY"),
+                          array = c("EPIC","450K"), 
+                          geneDB = c("UCSC", "GENCODE", "BOTH"),
+                          promoter = FALSE,
+                          FDR = TRUE)
 {
   res <- as.data.frame(res, check.names = FALSE)
   library(org.Hs.eg.db)
   library(DBI)
   
+  stopifnot(!is.null(rownames(res)) & "cg" %in% substring(rownames(res), 1,2))
+  
+  input <- match.arg(input)
   array <- match.arg(array)
   geneDB <- match.arg(geneDB)
   
@@ -199,15 +204,22 @@ getGeneSubset <- function(res, geneList,
   res_sub <- res[ind,]
   annot_sub <- annot[ind,]
   
-  if(FDR)
+  if(input == "EWAS" & FDR)
   {
+    message("Your input is EWAS results. Combining annotation data with subset results...")
     res_sub$FDR <- p.adjust(res_sub$Pvalue)
+    res_sub <- cbind(res_sub, annot_sub)
+    res_sub <- res_sub[order(res_sub$Pvalue),]
   }
   
-  res_sub <- cbind(res_sub, annot_sub)
-  
-  res_sub <- res_sub[order(res_sub$Pvalue),]
+  if(input == "METHY")
+  {
+    message("Your input is methyltion data. Preparing a list object to keep the subset of methylation and annotation data...")
+    ord <- order(annot_sub$chr & annot_sub$pos)
+    res_sub <- res_sub[ord, ]
+    annot_sub <- annot_sub[ord, ]
+    res_sub = list(methylation = res_sub, annotation = annot_sub)
+  }
   
   return(res_sub)
 }
-

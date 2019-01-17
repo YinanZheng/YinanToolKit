@@ -1,3 +1,16 @@
+message("The following tools have been succesfully loaded:")
+message("descript")
+message("IQRoutliers")
+message("impute_w_rowMean")
+message("DNAmAgeAccel")
+message("calibrateDNAmAge")
+message("NewDNAmAgeCleaner")
+message("lmCatCheck")
+message("lmCatSig")
+message("lmCatGetAnova")
+message("lmCatGetGroup")
+message("geneInDB")
+message("getGeneSubset")
 
 ## Produce descriptive table
 descript <- function(dat, var, type = "continuous", digit = 1)
@@ -41,6 +54,15 @@ IQRoutliers <- function(dat)
   return(dat)
 }
 
+## Impute missing with mean- row is variable (CpG methylation), column is sample
+impute_w_rowMean <- function(dat){
+  dat <- data.frame(dat, check.names = FALSE)
+  for(i in 1:nrow(dat)){
+    dat[i, is.na(dat[i, ])] <- mean(as.numeric(dat[i,]), na.rm = TRUE)
+  }
+  return(dat)
+}
+
 ## Function to compute Residule- note that the new column name is DNAmPhenoAgeAccel!
 DNAmAgeAccel <- function(DNAmAge, Age, ID)
 {
@@ -59,15 +81,6 @@ calibrateDNAmAge <- function(DNAmAge, Age)
   slope <- coe[2,1]
   DNAmAge_calibrated = (DNAmAge - intercept) / slope
   return(DNAmAge_calibrated)
-}
-
-## Impute missing with mean- row is variable (CpG methylation), column is sample
-impute_w_rowMean <- function(dat){
-  dat <- data.frame(dat, check.names = FALSE)
-  for(i in 1:nrow(dat)){
-    dat[i, is.na(dat[i, ])] <- mean(as.numeric(dat[i,]), na.rm = TRUE)
-  }
-  return(dat)
 }
 
 ## For new DNAm age calculator only. This function removes outliers for commonly used epigenetic age variables.

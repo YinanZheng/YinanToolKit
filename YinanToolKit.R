@@ -41,6 +41,26 @@ IQRoutliers <- function(dat)
   return(dat)
 }
 
+## Function to compute Residule- note that the new column name is DNAmPhenoAgeAccel!
+DNAmAgeAccel <- function(DNAmAge, Age, ID)
+{
+  dat <- data.frame(DNAmAge = DNAmAge, Age = Age)
+  rownames(dat) <- ID
+  DNAmPhenoAgeAccel <- resid(lm(DNAmAge ~ Age, data = dat))
+  return(data.frame(SampleID = names(DNAmPhenoAgeAccel), DNAmPhenoAgeAccel = DNAmPhenoAgeAccel))
+}
+
+## Function to Calibrate mAge
+calibrateDNAmAge <- function(DNAmAge, Age)
+{
+  dat <- data.frame(DNAmAge = DNAmAge, Age = Age)
+  coe <- summary(lm(DNAmAge ~ Age, data = dat))$coefficient
+  intercept <- coe[1,1]
+  slope <- coe[2,1]
+  DNAmAge_calibrated = (DNAmAge - intercept) / slope
+  return(DNAmAge_calibrated)
+}
+
 ## Impute missing with mean- row is variable (CpG methylation), column is sample
 impute_w_rowMean <- function(dat){
   dat <- data.frame(dat, check.names = FALSE)
@@ -48,6 +68,69 @@ impute_w_rowMean <- function(dat){
     dat[i, is.na(dat[i, ])] <- mean(as.numeric(dat[i,]), na.rm = TRUE)
   }
   return(dat)
+}
+
+## For new DNAm age calculator only. This function removes outliers for commonly used epigenetic age variables.
+NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
+{
+  DNAmAge_Output$HorvathDNAmAge_clean <- DNAmAge_Output$DNAmAge
+  message("Horvath DNAmAge:")
+  DNAmAge_Output$HorvathDNAmAge_clean <- IQRoutliers(DNAmAge_Output$HorvathDNAmAge_clean)
+  
+  DNAmAge_Output$HannumDNAmAge_clean <- DNAmAge_Output$DNAmAgeHannum
+  message("Hannum DNAmAge:")
+  DNAmAge_Output$HannumDNAmAge_clean <- IQRoutliers(DNAmAge_Output$HannumDNAmAge_clean)
+  
+  
+  ####Remove outliers for original PhenoAge and GrimAge
+  DNAmAge_Output$DNAmPhenoAge_clean <- DNAmAge_Output$DNAmPhenoAge
+  message("DNAmPhenoAge:")
+  DNAmAge_Output$DNAmPhenoAge_clean <- IQRoutliers(DNAmAge_Output$DNAmPhenoAge_clean)
+  
+  DNAmAge_Output$DNAmGrimAge_clean <- DNAmAge_Output$DNAmGrimAge
+  message("DNAmGrimAge:")
+  DNAmAge_Output$DNAmGrimAge_clean <- IQRoutliers(DNAmAge_Output$DNAmGrimAge_clean)
+  
+  ####Remove outliers for original SkinAge
+  DNAmAge_Output$DNAmSkinBloodAge_clean <- DNAmAge_Output$DNAmAgeSkinBloodClock
+  message("DNAmSkinBloodAge:")
+  DNAmAge_Output$DNAmSkinBloodAge_clean <- IQRoutliers(DNAmAge_Output$DNAmSkinBloodAge_clean)
+  
+  ####Removing outliers for IEAA and EEAA
+  DNAmAge_Output$IEAA_clean <- DNAmAge_Output$IEAA
+  message("IEAA:")
+  DNAmAge_Output$IEAA_clean <- IQRoutliers(DNAmAge_Output$IEAA_clean)
+  
+  DNAmAge_Output$EEAA_clean <- DNAmAge_Output$EEAA
+  message("EEAA:")
+  DNAmAge_Output$EEAA_clean <- IQRoutliers(DNAmAge_Output$EEAA_clean)
+  
+  ####Calculate PAA, GAA, SBAA using epigenetic age removed outliers
+  ####Compute PAA(PhenoAge Acceleration)and GAA(GrimAge Acceleration)
+  PAA <- DNAmAgeAccel(DNAmAge_Output$DNAmPhenoAge_clean, DNAmAge_Output$Age, DNAmAge_Output$SampleID)
+  colnames(PAA)[colnames(PAA)=="DNAmPhenoAgeAccel"] <- "PAA_clean"
+  
+  GAA <- DNAmAgeAccel(DNAmAge_Output$DNAmGrimAge_clean, DNAmAge_Output$Age, DNAmAge_Output$SampleID)
+  colnames(GAA)[colnames(GAA)=="DNAmPhenoAgeAccel"] <- "GAA_clean"
+  
+  ####Compute SBAA(SkinBloodAge Acceleration)
+  SBAA <- DNAmAgeAccel(DNAmAge_Output$DNAmSkinBloodAge_clean, DNAmAge_Output$Age, DNAmAge_Output$SampleID)
+  colnames(SBAA)[colnames(SBAA)=="DNAmPhenoAgeAccel"] <- "SBAA_clean"
+  
+  DNAmAge_Output <- merge(DNAmAge_Output, PAA, by ="SampleID", all = TRUE)
+  DNAmAge_Output <- merge(DNAmAge_Output, GAA, by ="SampleID", all = TRUE)
+  DNAmAge_Output <- merge(DNAmAge_Output, SBAA, by ="SampleID", all = TRUE)
+  
+  # ####Calibrate Horvath Age and Hannum Age
+  # DNAmAge_Output$HorvathDNAmAge_Calibrated <- calibrateDNAmAge(DNAmAge_Output$HorvathDNAmAge_clean, DNAmAge_Output$Age) 
+  # DNAmAge_Output$HannumDNAmAge_Calibrated <- calibrateDNAmAge(DNAmAge_Output$HannumDNAmAge_clean, DNAmAge_Output$Age) 
+  # 
+  # ####Calibrate PhenoAge and GrimAge
+  # DNAmAge_Output$PhenoAge_Calibrated <- calibrateDNAmAge(DNAmAge_Output$DNAmPhenoAge_clean, DNAmAge_Output$Age) 
+  # DNAmAge_Output$DNAmGrimAge_Calibrated <- calibrateDNAmAge(DNAmAge_Output$DNAmGrimAge_clean, DNAmAge_Output$Age) 
+  
+  write.csv(DNAmAge_Output, file = paste0(filename, ".csv"), row.names = FALSE)
+  return(DNAmAge_Output)
 }
 
 ### lmCat toolkit function

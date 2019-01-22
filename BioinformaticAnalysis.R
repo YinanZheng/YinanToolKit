@@ -30,7 +30,8 @@ kk <- enrichKEGG(gene         = geneSymbol$ENTREZID,
                  pvalueCutoff = 0.05)
 head(kk)
 
-write.csv(kk, "./Results/KEGG_enrich.csv")
+## save the results to current folder
+write.csv(kk, "./KEGG_enrich.csv")
 
 
 #### GO enrichment anlaysis
@@ -39,5 +40,6 @@ ego <- enrichGO(gene         = geneSymbol$ENTREZID,
                 pvalueCutoff = 0.05)
 head(ego)
 
-write.csv(ego, "./Results/GO_enrich.csv")
+## save the results to current folder
+write.csv(ego, "./GO_enrich.csv")
 

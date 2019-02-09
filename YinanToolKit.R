@@ -109,6 +109,11 @@ NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
   message("DNAmSkinBloodAge:")
   DNAmAge_Output$DNAmSkinBloodAge_clean <- IQRoutliers(DNAmAge_Output$DNAmSkinBloodAge_clean)
   
+  ####Remove outliers for original mPAI-1
+  DNAmAge_Output$DNAmPAI1_clean <- DNAmAge_Output$DNAmPAI1
+  message("DNAmSkinBloodAge:")
+  DNAmAge_Output$DNAmPAI1_clean <- IQRoutliers(DNAmAge_Output$DNAmPAI1_clean)
+  
   ####Removing outliers for IEAA and EEAA
   DNAmAge_Output$IEAA_clean <- DNAmAge_Output$IEAA
   message("IEAA:")
@@ -118,7 +123,7 @@ NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
   message("EEAA:")
   DNAmAge_Output$EEAA_clean <- IQRoutliers(DNAmAge_Output$EEAA_clean)
   
-  ####Calculate PAA, GAA, SBAA using epigenetic age removed outliers
+  ####Calculate PAA, GAA, SBAA, using epigenetic age removed outliers
   ####Compute PAA(PhenoAge Acceleration)and GAA(GrimAge Acceleration)
   PAA <- DNAmAgeAccel(DNAmAge_Output$DNAmPhenoAge_clean, DNAmAge_Output$Age, DNAmAge_Output$SampleID)
   colnames(PAA)[colnames(PAA)=="DNAmPhenoAgeAccel"] <- "PAA_clean"

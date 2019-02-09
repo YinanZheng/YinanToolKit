@@ -111,7 +111,7 @@ NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
   
   ####Remove outliers for original mPAI-1
   DNAmAge_Output$DNAmPAI1_clean <- DNAmAge_Output$DNAmPAI1
-  message("DNAmSkinBloodAge:")
+  message("DNAmPAI1:")
   DNAmAge_Output$DNAmPAI1_clean <- IQRoutliers(DNAmAge_Output$DNAmPAI1_clean)
   
   ####Removing outliers for IEAA and EEAA

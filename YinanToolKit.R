@@ -228,7 +228,7 @@ getGeneSubset <- function(res, geneList,
                           promoter = FALSE,
                           FDR = TRUE)
 {
-  res <- as.data.frame(res, check.names = FALSE)
+  # res <- as.data.frame(res, check.names = FALSE)
   library(org.Hs.eg.db)
   library(DBI)
   
@@ -302,8 +302,8 @@ getGeneSubset <- function(res, geneList,
     if(promoter) {message("Note: Promoter only."); ind <- intersect(ind, union(promoter_UCSC, promoter_GENCODE))}
   }
   
-  res_sub <- res[ind,]
-  annot_sub <- annot[ind,]
+  res_sub <- as.data.frame(res[ind,], check.names = FALSE)
+  annot_sub <- as.data.frame(annot[ind,], check.names = FALSE)
   
   if(input == "EWAS" & FDR)
   {
@@ -316,7 +316,7 @@ getGeneSubset <- function(res, geneList,
   if(input == "METHY")
   {
     message("Your input is methyltion data. Preparing a list object to keep the subset of methylation and annotation data...")
-    ord <- order(annot_sub$chr & annot_sub$pos)
+    ord <- order(as.factor(annot_sub$chr) & as.numeric(annot_sub$pos))
     res_sub <- res_sub[ord, ]
     annot_sub <- annot_sub[ord, ]
     res_sub = list(methylation = res_sub, annotation = annot_sub)

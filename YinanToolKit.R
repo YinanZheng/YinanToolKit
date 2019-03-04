@@ -316,7 +316,7 @@ getGeneSubset <- function(res, geneList,
   if(input == "METHY")
   {
     message("Your input is methyltion data. Preparing a list object to keep the subset of methylation and annotation data...")
-    ord <- order(as.factor(annot_sub$chr) & as.numeric(annot_sub$pos))
+    ord <- order(annot_sub$chr , annot_sub$pos)
     res_sub <- res_sub[ord, ]
     annot_sub <- annot_sub[ord, ]
     res_sub = list(methylation = res_sub, annotation = annot_sub)

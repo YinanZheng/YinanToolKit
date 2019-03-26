@@ -13,7 +13,12 @@ message("geneInDB")
 message("getGeneSubset")
 
 ## Produce descriptive table
-descript <- function(dat, var, type = "continuous", digit = 1)
+round_pad <- function(x, digits=0)
+{
+ format(round(x, digits), nsmall=digits)
+}
+
+descript <- function(dat, var, type = "continuous", digits = 1)
 {
   d <- eval(parse(text = paste0("dat$", var)))
   if(type == "continuous")
@@ -22,7 +27,7 @@ descript <- function(dat, var, type = "continuous", digit = 1)
                       MeanOrFreq = mean(d,na.rm = T),
                       SDOrPerc = sd(d, na.rm = T),
                       Nmissing = sum(is.na(d)))
-    res$Presentation <- paste0(round(res$MeanOrFreq, digit = digit), " (", round(res$SDOrPerc, digit = digit), ")")
+    res$Presentation <- paste0(round_pad(res$MeanOrFreq, digits = digits), " (", round_pad(res$SDOrPerc, digits = digits), ")")
   }
   if(type == "categorical")
   {
@@ -31,7 +36,7 @@ descript <- function(dat, var, type = "continuous", digit = 1)
                       MeanOrFreq = as.numeric(temp),
                       SDOrPerc = as.numeric(temp)/length(d),
                       Nmissing = NA)
-    res$Presentation <- paste0(res$MeanOrFreq, " (", round(res$SDOrPerc*100, digit = digit), ")")
+    res$Presentation <- paste0(res$MeanOrFreq, " (", round_pad(res$SDOrPerc*100, digits = digits), ")")
   }
   res
 }

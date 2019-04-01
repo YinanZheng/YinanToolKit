@@ -1,18 +1,24 @@
-message("The following tools have been succesfully loaded:")
-message("descript")
-message("IQRoutliers")
-message("impute_w_rowMean")
-message("DNAmAgeAccel")
-message("calibrateDNAmAge")
-message("NewDNAmAgeCleaner")
-message("lmCatCheck")
-message("lmCatSig")
-message("lmCatGetAnova")
-message("lmCatGetGroup")
-message("geneInDB")
-message("getGeneSubset")
+function_list <- c("descript",
+                   "IQRoutliers",
+                   "impute_w_rowMean",
+                   "DNAmAgeAccel",
+                   "calibrateDNAmAge",
+                   "NewDNAmAgeCleaner",
+                   "lmCatCheck",
+                   "lmCatSig",
+                   "lmCatGetAnova",
+                   "lmCatGetGroup",
+                   "geneInDB",
+                   "getGeneSubset",
+                   "UCSCtoGRanges")
 
-## Produce descriptive table
+trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
+                
+message("The following tools have been succesfully loaded:")
+trash <- sapply(function_list, function(x) message(x))
+
+                
+### Produce descriptive table
 round_pad <- function(x, digits=0)
 {
  format(round(x, digits), nsmall=digits)
@@ -41,7 +47,7 @@ descript <- function(dat, var, type = "continuous", digits = 1)
   res
 }
 
-## Remove outliers using IQR rule
+### Remove outliers using IQR rule
 IQRoutliers <- function(dat)
 {
   iqr <- IQR(dat, na.rm = T)
@@ -59,7 +65,7 @@ IQRoutliers <- function(dat)
   return(dat)
 }
 
-## Impute missing with mean- row is variable (CpG methylation), column is sample
+### Function to impute missing with mean- row is variable (CpG methylation), column is sample
 impute_w_rowMean <- function(dat){
   dat <- data.frame(dat, check.names = FALSE)
   for(i in 1:nrow(dat)){
@@ -68,7 +74,7 @@ impute_w_rowMean <- function(dat){
   return(dat)
 }
 
-## Function to compute Residule- note that the new column name is DNAmPhenoAgeAccel!
+### Function to compute Residule- note that the new column name is DNAmPhenoAgeAccel!
 DNAmAgeAccel <- function(DNAmAge, Age, ID)
 {
   dat <- data.frame(DNAmAge = DNAmAge, Age = Age)
@@ -77,7 +83,7 @@ DNAmAgeAccel <- function(DNAmAge, Age, ID)
   return(data.frame(SampleID = names(DNAmPhenoAgeAccel), DNAmPhenoAgeAccel = DNAmPhenoAgeAccel))
 }
 
-## Function to Calibrate mAge
+### Function to Calibrate mAge
 calibrateDNAmAge <- function(DNAmAge, Age)
 {
   dat <- data.frame(DNAmAge = DNAmAge, Age = Age)
@@ -88,7 +94,7 @@ calibrateDNAmAge <- function(DNAmAge, Age)
   return(DNAmAge_calibrated)
 }
 
-## For new DNAm age calculator only. This function removes outliers for commonly used epigenetic age variables.
+### For new DNAm age calculator only. This function removes outliers for commonly used epigenetic age variables.
 NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
 {
   DNAmAge_Output$HorvathDNAmAge_clean <- DNAmAge_Output$DNAmAge
@@ -328,4 +334,18 @@ getGeneSubset <- function(res, geneList,
   }
   
   return(res_sub)
+}
+
+### Convert a UCSC genomic region text (chr:start-end) to a GRanges object
+UCSCtoGRanges <- function(text)
+{
+  library(GenomicRanges)
+  split1 <- strsplit(text, ":")[[1]]
+  chr <- split1[1]
+  gr <- split1[2]
+  split2 <- strsplit(gr, "-")[[1]]
+  start <- as.integer(split2[1])
+  end <- as.integer(split2[2])
+  GR <- GRanges(seqnames = chr, IRanges(start = start, end = end))
+  return(GR)
 }

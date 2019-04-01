@@ -340,6 +340,7 @@ getGeneSubset <- function(res, geneList,
 UCSCtoGRanges <- function(text)
 {
   library(GenomicRanges)
+  text <- gsub(",","",text)
   split1 <- strsplit(text, ":")[[1]]
   chr <- split1[1]
   gr <- split1[2]

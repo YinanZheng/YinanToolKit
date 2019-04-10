@@ -1,19 +1,30 @@
-message("The following tools have been succesfully loaded:")
-message("descript")
-message("IQRoutliers")
-message("impute_w_rowMean")
-message("DNAmAgeAccel")
-message("calibrateDNAmAge")
-message("NewDNAmAgeCleaner")
-message("lmCatCheck")
-message("lmCatSig")
-message("lmCatGetAnova")
-message("lmCatGetGroup")
-message("geneInDB")
-message("getGeneSubset")
+function_list <- c("descript",
+                   "IQRoutliers",
+                   "impute_w_rowMean",
+                   "DNAmAgeAccel",
+                   "calibrateDNAmAge",
+                   "NewDNAmAgeCleaner",
+                   "lmCatCheck",
+                   "lmCatSig",
+                   "lmCatGetAnova",
+                   "lmCatGetGroup",
+                   "geneInDB",
+                   "getGeneSubset",
+                   "UCSCtoGRanges")
 
-## Produce descriptive table
-descript <- function(dat, var, type = "continuous", digit = 1)
+trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
+                
+message("The following tools have been succesfully loaded:")
+trash <- sapply(function_list, function(x) message(x))
+
+                
+### Produce descriptive table
+round_pad <- function(x, digits=0)
+{
+ format(round(x, digits), nsmall=digits)
+}
+
+descript <- function(dat, var, type = "continuous", digits = 1)
 {
   d <- eval(parse(text = paste0("dat$", var)))
   if(type == "continuous")
@@ -22,7 +33,7 @@ descript <- function(dat, var, type = "continuous", digit = 1)
                       MeanOrFreq = mean(d,na.rm = T),
                       SDOrPerc = sd(d, na.rm = T),
                       Nmissing = sum(is.na(d)))
-    res$Presentation <- paste0(round(res$MeanOrFreq, digit = digit), " (", round(res$SDOrPerc, digit = digit), ")")
+    res$Presentation <- paste0(round_pad(res$MeanOrFreq, digits = digits), " (", round_pad(res$SDOrPerc, digits = digits), ")")
   }
   if(type == "categorical")
   {
@@ -31,12 +42,12 @@ descript <- function(dat, var, type = "continuous", digit = 1)
                       MeanOrFreq = as.numeric(temp),
                       SDOrPerc = as.numeric(temp)/length(d),
                       Nmissing = NA)
-    res$Presentation <- paste0(res$MeanOrFreq, " (", round(res$SDOrPerc*100, digit = digit), ")")
+    res$Presentation <- paste0(res$MeanOrFreq, " (", round_pad(res$SDOrPerc*100, digits = digits), ")")
   }
   res
 }
 
-## Remove outliers using IQR rule
+### Remove outliers using IQR rule
 IQRoutliers <- function(dat)
 {
   iqr <- IQR(dat, na.rm = T)
@@ -54,7 +65,7 @@ IQRoutliers <- function(dat)
   return(dat)
 }
 
-## Impute missing with mean- row is variable (CpG methylation), column is sample
+### Function to impute missing with mean- row is variable (CpG methylation), column is sample
 impute_w_rowMean <- function(dat){
   dat <- data.frame(dat, check.names = FALSE)
   for(i in 1:nrow(dat)){
@@ -63,7 +74,7 @@ impute_w_rowMean <- function(dat){
   return(dat)
 }
 
-## Function to compute Residule- note that the new column name is DNAmPhenoAgeAccel!
+### Function to compute Residule- note that the new column name is DNAmPhenoAgeAccel!
 DNAmAgeAccel <- function(DNAmAge, Age, ID)
 {
   dat <- data.frame(DNAmAge = DNAmAge, Age = Age)
@@ -72,7 +83,7 @@ DNAmAgeAccel <- function(DNAmAge, Age, ID)
   return(data.frame(SampleID = names(DNAmPhenoAgeAccel), DNAmPhenoAgeAccel = DNAmPhenoAgeAccel))
 }
 
-## Function to Calibrate mAge
+### Function to Calibrate mAge
 calibrateDNAmAge <- function(DNAmAge, Age)
 {
   dat <- data.frame(DNAmAge = DNAmAge, Age = Age)
@@ -83,7 +94,7 @@ calibrateDNAmAge <- function(DNAmAge, Age)
   return(DNAmAge_calibrated)
 }
 
-## For new DNAm age calculator only. This function removes outliers for commonly used epigenetic age variables.
+### For new DNAm age calculator only. This function removes outliers for commonly used epigenetic age variables.
 NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
 {
   DNAmAge_Output$HorvathDNAmAge_clean <- DNAmAge_Output$DNAmAge
@@ -109,6 +120,11 @@ NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
   message("DNAmSkinBloodAge:")
   DNAmAge_Output$DNAmSkinBloodAge_clean <- IQRoutliers(DNAmAge_Output$DNAmSkinBloodAge_clean)
   
+  ####Remove outliers for original mPAI-1
+  DNAmAge_Output$DNAmPAI1_clean <- DNAmAge_Output$DNAmPAI1
+  message("DNAmPAI1:")
+  DNAmAge_Output$DNAmPAI1_clean <- IQRoutliers(DNAmAge_Output$DNAmPAI1_clean)
+  
   ####Removing outliers for IEAA and EEAA
   DNAmAge_Output$IEAA_clean <- DNAmAge_Output$IEAA
   message("IEAA:")
@@ -118,7 +134,7 @@ NewDNAmAgeCleaner <- function(DNAmAge_Output, filename)
   message("EEAA:")
   DNAmAge_Output$EEAA_clean <- IQRoutliers(DNAmAge_Output$EEAA_clean)
   
-  ####Calculate PAA, GAA, SBAA using epigenetic age removed outliers
+  ####Calculate PAA, GAA, SBAA, using epigenetic age removed outliers
   ####Compute PAA(PhenoAge Acceleration)and GAA(GrimAge Acceleration)
   PAA <- DNAmAgeAccel(DNAmAge_Output$DNAmPhenoAge_clean, DNAmAge_Output$Age, DNAmAge_Output$SampleID)
   colnames(PAA)[colnames(PAA)=="DNAmPhenoAgeAccel"] <- "PAA_clean"
@@ -223,7 +239,7 @@ getGeneSubset <- function(res, geneList,
                           promoter = FALSE,
                           FDR = TRUE)
 {
-  res <- as.data.frame(res, check.names = FALSE)
+  # res <- as.data.frame(res, check.names = FALSE)
   library(org.Hs.eg.db)
   library(DBI)
   
@@ -297,8 +313,8 @@ getGeneSubset <- function(res, geneList,
     if(promoter) {message("Note: Promoter only."); ind <- intersect(ind, union(promoter_UCSC, promoter_GENCODE))}
   }
   
-  res_sub <- res[ind,]
-  annot_sub <- annot[ind,]
+  res_sub <- as.data.frame(res[ind,], check.names = FALSE)
+  annot_sub <- as.data.frame(annot[ind,], check.names = FALSE)
   
   if(input == "EWAS" & FDR)
   {
@@ -311,11 +327,26 @@ getGeneSubset <- function(res, geneList,
   if(input == "METHY")
   {
     message("Your input is methyltion data. Preparing a list object to keep the subset of methylation and annotation data...")
-    ord <- order(annot_sub$chr & annot_sub$pos)
+    ord <- order(annot_sub$chr , annot_sub$pos)
     res_sub <- res_sub[ord, ]
     annot_sub <- annot_sub[ord, ]
     res_sub = list(methylation = res_sub, annotation = annot_sub)
   }
   
   return(res_sub)
+}
+
+### Convert a UCSC genomic region text (chr:start-end) to a GRanges object
+UCSCtoGRanges <- function(text)
+{
+  library(GenomicRanges)
+  text <- gsub(",","",text)
+  split1 <- strsplit(text, ":")[[1]]
+  chr <- split1[1]
+  gr <- split1[2]
+  split2 <- strsplit(gr, "-")[[1]]
+  start <- as.integer(split2[1])
+  end <- as.integer(split2[2])
+  GR <- GRanges(seqnames = chr, IRanges(start = start, end = end))
+  return(GR)
 }

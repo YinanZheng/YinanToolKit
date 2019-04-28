@@ -336,17 +336,28 @@ getGeneSubset <- function(res, geneList,
   return(res_sub)
 }
 
-### Convert a UCSC genomic region text (chr:start-end) to a GRanges object
+### Convert a UCSC genomic region text/text vector (chr:start-end or chr:pos) to a GRanges object
 UCSCtoGRanges <- function(text)
 {
   library(GenomicRanges)
   text <- gsub(",","",text)
-  split1 <- strsplit(text, ":")[[1]]
-  chr <- split1[1]
-  gr <- split1[2]
-  split2 <- strsplit(gr, "-")[[1]]
-  start <- as.integer(split2[1])
-  end <- as.integer(split2[2])
+  split1 <- do.call(rbind, strsplit(text, ":"))
+  chr <- split1[,1]
+  gr <- split1[,2]
+  
+  if(all(!grepl("-", text)))
+  {
+    message("Single position format...")
+    start <- as.integer(gr)
+    end <- as.integer(gr)
+  } else {
+    message("Range format...")
+    split2 <- do.call(rbind, strsplit(gr, "-"))
+    start <- as.integer(split2[,1])
+    end <- as.integer(split2[,2])
+  }
+  
   GR <- GRanges(seqnames = chr, IRanges(start = start, end = end))
   return(GR)
 }
+

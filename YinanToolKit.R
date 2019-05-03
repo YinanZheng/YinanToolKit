@@ -10,7 +10,8 @@ function_list <- c("descript",
                    "lmCatGetGroup",
                    "geneInDB",
                    "getGeneSubset",
-                   "UCSCtoGRanges")
+                   "UCSCtoGRanges"，
+                   "corPlot")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
                 
@@ -361,3 +362,24 @@ UCSCtoGRanges <- function(text)
   return(GR)
 }
 
+
+## Make a quick scatterplot with regression line and correlation test
+## x and y are column names in dat
+corPlot <- function(dat, x, y, xlab = x, ylab = y, main = NULL)
+{
+  library(ggplot2)
+  library(ggpubr)
+  p <- eval(parse(text = paste0("ggplot(data = dat, aes(", x, ", ", y, "))")))
+  
+  p = p + geom_point(shape = 21, colour = "dark grey", fill = "#52478B", size = 2) + 
+    theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black")) 
+  
+  p = p + geom_smooth(method = "lm", colour = "black") + 
+    xlab(xlab) + ylab(ylab)
+  
+  p = p + stat_cor(method = "pearson")
+  
+  if(!is.null(main)) p = p + ggtitle(main)
+  
+  return(p)
+}

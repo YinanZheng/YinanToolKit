@@ -365,21 +365,31 @@ UCSCtoGRanges <- function(text)
 
 ## Make a quick scatterplot with regression line and correlation test
 ## x and y are column names in dat
-corPlot <- function(dat, x, y, xlab = x, ylab = y, main = NULL)
+corPlot <- function(dat, x, y, xlab = x, ylab = y, xlimit = NULL, ylimit = NULL, 
+                    smoothtype = "lm", corlab_x = "left", corlab_y = "top", main = NULL)
 {
   library(ggplot2)
   library(ggpubr)
+  
   p <- eval(parse(text = paste0("ggplot(data = dat, aes(", x, ", ", y, "))")))
+  p = p + theme_classic()
   
   p = p + geom_point(shape = 21, colour = "dark grey", fill = "#52478B", size = 2) + 
-    theme(axis.text.x = element_text(color = "black"), axis.text.y = element_text(color = "black")) 
+    theme(axis.text.x = element_text(color = "black", size=14), 
+          axis.text.y = element_text(color = "black", size=14),
+          axis.title = element_text(size=14))
   
-  p = p + geom_smooth(method = "lm", colour = "black") + 
+  p = p + geom_smooth(method = smoothtype, colour = "black") + 
     xlab(xlab) + ylab(ylab)
   
-  p = p + stat_cor(method = "pearson")
+  p = p + stat_cor(method = "pearson", label.x.npc = corlab_x, label.y.npc = corlab_y)
   
+  
+  
+  if(!is.null(xlimit)) p = p + xlim(xlimit)
+  if(!is.null(ylimit)) p = p + xlim(ylimit)
   if(!is.null(main)) p = p + ggtitle(main)
   
   return(p)
 }
+

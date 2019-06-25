@@ -10,7 +10,7 @@ function_list <- c("descript",
                    "lmCatGetGroup",
                    "geneInDB",
                    "getGeneSubset",
-                   "UCSCtoGRanges"，
+                   "UCSCtoGRanges",
                    "corPlot")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))

@@ -1,4 +1,5 @@
-function_list <- c("descript",
+function_list <- c("round_pad",  
+                   "descript",
                    "IQRoutliers",
                    "impute_w_rowMean",
                    "DNAmAgeAccel",

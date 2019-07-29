@@ -12,7 +12,8 @@ function_list <- c("round_pad",
                    "geneInDB",
                    "getGeneSubset",
                    "UCSCtoGRanges",
-                   "corPlot")
+                   "corPlot",
+                   "extractSNPdat")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
                 
@@ -394,3 +395,61 @@ corPlot <- function(dat, x, y, xlab = x, ylab = y, xlimit = NULL, ylimit = NULL,
   return(p)
 }
 
+## Extract SNP from CARDIA genotype dataset in Quest
+# race: "Black" or "White"
+extractSNPdat <- function(snpDB, rsids, race, infoOnly = TRUE)
+{
+  message("Locating SNP position...")
+  my_snps <- snpsById(snpDB, rsids)
+  my_snps <- sort(my_snps)
+  
+  chrList <- as.character(seqnames(my_snps))
+  snpList <- as.character(my_snps$RefSNP_id)
+  
+  lastChr = ""
+  
+  for(i in 1:length(snpList))
+  {
+    rsid <- snpList[i]
+    chr <- chrList[i]
+    
+    message("Processing ", rsid, " in chromosome ", chr)
+    
+    INFO_select <- NULL
+    DOSAGE_select <- NULL
+    GENOTYPE_select <- NULL
+    
+    if(chr != lastChr)
+    {
+      QuestPath <- file.path("/projects/b1096/CARDIA/GENOTYPE/Imputation", paste0(race, "_filter_RDS"))
+      INFO_Path <- file.path(QuestPath, paste0(race, "_chr", chr, ".Minimac3_MI_1KGP_p3v5_typed_rsid_ALL.MAF0.01_Rsq0.3_INFO.rds"))
+      DOSAGE_Path <- file.path(QuestPath, paste0(race, "_chr", chr, ".Minimac3_MI_1KGP_p3v5_typed_rsid_ALL.MAF0.01_Rsq0.3_DOSAGE.rds"))
+      GENOTYPE_Path <- file.path(QuestPath, paste0(race, "_chr", chr, ".Minimac3_MI_1KGP_p3v5_typed_rsid_ALL.MAF0.01_Rsq0.3_GENOTYPE.rds"))
+      
+      INFO_dat <- readRDS(INFO_Path)
+      
+      if(!infoOnly)
+      {
+        DOSAGE_dat <- readRDS(DOSAGE_Path)
+        GENOTYPE_dat <- readRDS(GENOTYPE_Path)
+      }
+      lastChr <- chr
+    }
+
+    SNPind <- which(INFO_dat$SNP_ID == rsid)
+    
+    if(length(SNPind) > 0)
+    {
+      INFO_select <- rbind(INFO_select, INFO_dat[SNPind,])
+      
+      if(!infoOnly)
+      {
+        DOSAGE_select <- rbind(DOSAGE_select, DOSAGE_dat[SNPind,])
+        GENOTYPE_select <- rbind(GENOTYPE_select, GENOTYPE_dat[SNPind,])
+      }
+    } else {
+      message("SNP ", rsid, " does not exist in the database!")
+    }
+  }
+  return(list(INFO = INFO_select, DOSAGE = DOSAGE_select, GENOTYPE = GENOTYPE_select))
+}

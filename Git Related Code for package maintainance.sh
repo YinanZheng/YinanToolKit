@@ -30,11 +30,11 @@ git merge upstream/master
 git push upstream master
 git push origin master
 
-git checkout RELEASE_3_9
-git merge upstream/RELEASE_3_9
-git merge origin/RELEASE_3_9
-git push upstream RELEASE_3_9
-git push origin RELEASE_3_9
+git checkout RELEASE_3_10
+git merge upstream/RELEASE_3_10
+git merge origin/RELEASE_3_10
+git push upstream RELEASE_3_10
+git push origin RELEASE_3_10
 
 ###############################################
 ###############################################
@@ -59,14 +59,14 @@ git checkout master
 ### ....
 ### Remember to update README.md and NEWS
 
-### Add modified files
+### Add modified files (-A: all files)
 git add -A
 
 ### after version bump  
 git add DESCRIPTION
 
 
-git commit -m "REMP 1.9.1 updates"
+git commit -m "REMP 1.9.2 updates"
 
 
 
@@ -75,7 +75,7 @@ git checkout RELEASE_3_9
 git cherry-pick master
 ### Fix version bump by editing 'Version:' field of DESCRIPTION, then
 git add DESCRIPTION
-git commit -m "REMP 1.8.1 updates"
+git commit -m "REMP 1.8.2 updates"
 ### 
 
 ### Push and update devel

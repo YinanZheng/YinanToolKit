@@ -482,7 +482,7 @@ CpGAnnot_GENCODE <- function(GENCODE_GTF, cpg, arrayType, win = 1000000)
    annot_GR_extended <- GRanges(seqnames = annot$chr, IRanges(start = annot$pos-win, end = annot$pos+win), 
                                 strand = as.character(annot$strand), CpG_ID = annot$Name, CpG_Pos = annot$pos)
    
-   hits <- findOverlaps(annot_GR_extended, GENCODE_GTF)
+   hits <- findOverlaps(annot_GR_extended, GENCODE_GTF, ignore.strand=TRUE)
 
    CpG_annot_full <- data.frame(CpG = annot_GR_extended$CpG_ID[queryHits(hits)],
                                 CpG_Pos = annot_GR_extended$CpG_Pos[queryHits(hits)],

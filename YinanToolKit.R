@@ -13,7 +13,8 @@ function_list <- c("round_pad",
                    "getGeneSubset",
                    "UCSCtoGRanges",
                    "corPlot",
-                   "extractSNPdat")
+                   "extractSNPdat",
+                   "CpGAnnot_GENCODE")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
                 
@@ -453,3 +454,80 @@ extractSNPdat <- function(snpDB, rsids, race, infoOnly = TRUE)
   }
   return(list(INFO = INFO_select, DOSAGE = DOSAGE_select, GENOTYPE = GENOTYPE_select))
 }
+
+## Annotate CpGs with GENCODE database                
+# Download GENCODE gene annotation file GTF: https://www.gencodegenes.org/human/ https://www.gencodegenes.org/human/release_33lift37.html
+# GENCODE_GTF <- rtracklayer::import("./Data/gencode.v33lift37.annotation.gtf.gz", format = "gtf")
+# cpg: the list of CpG to be annotated.
+
+# Outcome dataset -> Distance:  Negative distance = upstream of gene
+CpGAnnot_GENCODE <- function(GENCODE_GTF, cpg, arrayType, win = 1000000)
+{
+   if(arrayType == "EPIC")
+   {
+      library(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+      annot <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b2.hg19)
+      annot <- subset(annot, Name %in% cpg)
+   }
+
+   if(arrayType == "450K")
+   {
+      library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+      annot <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+      annot <- subset(annot, Name %in% cpg)
+   }
+
+   message("Flanking region window size: ", win)
+   
+   annot_GR_extended <- GRanges(seqnames = annot$chr, IRanges(start = annot$pos-win, end = annot$pos+win), 
+                                strand = as.character(annot$strand), CpG_ID = annot$Name, CpG_Pos = annot$pos)
+   
+   hits <- findOverlaps(annot_GR_extended, GENCODE_GTF)
+
+   CpG_annot_full <- data.frame(CpG = annot_GR_extended$CpG_ID[queryHits(hits)],
+                                CpG_Pos = annot_GR_extended$CpG_Pos[queryHits(hits)],
+                                CpG_strand = strand(annot_GR_extended[queryHits(hits)]),
+                                GENCODE_GTF[subjectHits(hits)])
+   
+   CpG_annot_full_reverse <- subset(CpG_annot_full, strand == "-")
+   CpG_annot_full_forward <- subset(CpG_annot_full, strand == "+")
+   
+   CpG_annot_full_reverse$distance <- CpG_annot_full_reverse$end - CpG_annot_full_reverse$CpG_Pos ## Negative distance = upstream of gene
+   CpG_annot_full_forward$distance <- CpG_annot_full_forward$CpG_Pos - CpG_annot_full_forward$start ## Negative distance = upstream of gene
+   
+   # CpG-Gene combination by strand
+   CpG_annot_full_reverse_nearby <- CpG_annot_full_reverse %>% 
+      group_by(CpG, gene_name) %>%
+      filter(abs(distance) == min(abs(distance))) %>% select(CpG, CpG_Pos, CpG_strand, seqnames, start, end, strand, gene_name, gene_type, distance)
+   
+   CpG_annot_full_forward_nearby <- CpG_annot_full_forward %>% 
+      group_by(CpG, gene_name) %>%
+      filter(abs(distance) == min(abs(distance))) %>% select(CpG, CpG_Pos, CpG_strand, seqnames, start, end, strand, gene_name, gene_type, distance)
+   
+   CpG_annot_full_nearby <- rbind(CpG_annot_full_reverse_nearby, CpG_annot_full_forward_nearby)
+   
+   # by CpG
+   CpG_annot_full_nearby <- CpG_annot_full_nearby %>% 
+      group_by(CpG) %>% filter(abs(distance) == min(abs(distance))) %>%
+      arrange(CpG)
+   
+   ## Organize results
+   CpG_annot_full_nearby_summarise <- CpG_annot_full_nearby %>%
+      group_by(CpG) %>%
+      summarise(Chr = as.integer(gsub("chr", "", as.character(unique(seqnames)))), CpG_Pos = unique(CpG_Pos), CpG_strand = unique(CpG_strand), 
+                Gene_strand = unique(strand), start = min(start), end = max(end), 
+                gene_name = paste(unique(gene_name), collapse = ";"),
+                gene_type = paste(unique(gene_type), collapse = ";"),
+                Distance = paste(unique(distance), collapse = ";")) %>%
+      arrange(Chr, CpG_Pos)
+   
+   CpG_annot_full_nearby_summarise$Abs_Distance <- abs(as.integer(CpG_annot_full_nearby_summarise$Distance))
+   CpG_annot_full_nearby_summarise$UCSC_POS <- with(CpG_annot_full_nearby_summarise, paste0("chr", Chr, ":", CpG_Pos))
+   
+   n_cpg <- length(cpg)
+   n_cpg_annot <- length(unique(CpG_annot_full_nearby_summarise$CpG))
+   
+   if(n_cpg == n_cpg_annot) message("All ", n_cpg, " CpGs are annotated!") else message("Only ", n_cpg_annot, " out of ", n_cpg, " are annotated!")
+   return(CpG_annot_full_nearby_summarise)
+}
+

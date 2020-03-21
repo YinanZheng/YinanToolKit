@@ -403,12 +403,18 @@ corPlot <- function(dat, x, y, xlab = x, ylab = y, xlimit = NULL, ylimit = NULL,
 # library(SNPlocs.Hsapiens.dbSNP144.GRCh37)
 # snpDB <- SNPlocs.Hsapiens.dbSNP144.GRCh37
                 
-extractSNPdat <- function(snpDB, rsids, race, infoOnly = TRUE)
+extractSNPdat <- function(snpDB, rsids = NULL, seqnames = NULL, pos = NULL, race, infoOnly = TRUE)
 {
   message("Locating SNP position...")
-  my_snps <- snpsById(snpDB, rsids)
-  my_snps <- sort(my_snps)
   
+  if(all(is.na(seqnames)))
+  {
+    my_snps <- snpsById(snpDB, rsids)
+    my_snps <- sort(my_snps)
+  } else {
+    my_snps <- GRanges(seqnames = seqnames, ranges = IRanges(start = pos, end = pos), RefSNP_id = rsids)
+  }
+
   chrList <- as.character(seqnames(my_snps))
   snpList <- as.character(my_snps$RefSNP_id)
   
@@ -441,7 +447,7 @@ extractSNPdat <- function(snpDB, rsids, race, infoOnly = TRUE)
       }
       lastChr <- chr
     }
-
+    
     SNPind <- which(INFO_dat$SNP_ID == rsid)
     
     if(length(SNPind) > 0)

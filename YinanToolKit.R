@@ -398,6 +398,11 @@ corPlot <- function(dat, x, y, xlab = x, ylab = y, xlimit = NULL, ylimit = NULL,
 
 ## Extract SNP from CARDIA genotype dataset in Quest
 # race: "Black" or "White"
+# library(BSgenome)
+# available.SNPs()
+# library(SNPlocs.Hsapiens.dbSNP144.GRCh37)
+# snpDB <- SNPlocs.Hsapiens.dbSNP144.GRCh37
+                
 extractSNPdat <- function(snpDB, rsids, race, infoOnly = TRUE)
 {
   message("Locating SNP position...")

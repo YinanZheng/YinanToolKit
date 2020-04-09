@@ -404,11 +404,10 @@ corPlot <- function(dat, x, y, xlab = x, ylab = y, xlimit = NULL, ylimit = NULL,
 # snpDB <- SNPlocs.Hsapiens.dbSNP144.GRCh37
                 
 extractSNPdat <- function(snpDB, rsids = NULL, seqnames = NULL, pos = NULL, race, infoOnly = TRUE)
-{
-  message("Locating SNP position...")
-  
+{  
   if(all(is.na(seqnames)))
   {
+    message("Locating SNP position...")
     my_snps <- snpsById(snpDB, rsids)
     my_snps <- sort(my_snps)
   } else {
@@ -466,6 +465,70 @@ extractSNPdat <- function(snpDB, rsids = NULL, seqnames = NULL, pos = NULL, race
   return(list(INFO = INFO_select, DOSAGE = DOSAGE_select, GENOTYPE = GENOTYPE_select))
 }
 
+## GDM version (not imputed data only genotype data)
+## Mother == TRUE then extract Mother's data, Mother == FALSE then extract Children's data
+extractSNPdat <- function(snpDB, rsids = NULL, seqnames = NULL, pos = NULL, Mother = TRUE, infoOnly = TRUE)
+{
+  if(all(is.na(seqnames)))
+  {
+    message("Locating SNP position...")
+    
+    my_snps <- snpsById(snpDB, rsids, ifnotfound='warning')
+    my_snps <- sort(my_snps)
+  } else {
+    my_snps <- GRanges(seqnames = seqnames, ranges = IRanges(start = pos, end = pos), RefSNP_id = rsids)
+  }
+  
+  if(Mother) {message("Getting Mother's data..."); who = "MOTHER"} else {message("Getting Children's data..."); who = "CHILDREN"}
+  
+  chrList <- as.character(seqnames(my_snps))
+  snpList <- as.character(my_snps$RefSNP_id)
+  
+  lastChr = ""
+  
+  for(i in 1:length(snpList))
+  {
+    rsid <- snpList[i]
+    chr <- chrList[i]
+    
+    message("Processing ", rsid, " in chromosome ", chr)
+    
+    INFO_select <- NULL
+    GENOTYPE_select <- NULL
+    
+    if(chr != lastChr)
+    {
+      QuestPath <- file.path("/projects/b1096/GDM/GWAS/Children_Mothers_Merged/RDS")
+      INFO_Path <- file.path(QuestPath, paste0("chr", chr, "_rsid_INFO.rds"))
+      GENOTYPE_Path <- file.path(QuestPath, paste0("chr", chr, "_", who, "_rsid_GENOTYPE.rds"))
+
+      INFO_dat <- readRDS(INFO_Path)
+      
+      if(!infoOnly)
+      {
+        GENOTYPE_dat <- readRDS(GENOTYPE_Path)
+      }
+      lastChr <- chr
+    }
+    
+    SNPind <- which(INFO_dat$SNP_ID == rsid)
+    
+    if(length(SNPind) > 0)
+    {
+      message("SNP ", rsid, " found in the database!")
+      INFO_select <- rbind(INFO_select, INFO_dat[SNPind,])
+      
+      if(!infoOnly)
+      {
+        GENOTYPE_select <- rbind(GENOTYPE_select, GENOTYPE_dat[SNPind,])
+      }
+    } else {
+      message("SNP ", rsid, " does not exist in the database!")
+    }
+  }
+  return(list(INFO = INFO_select, GENOTYPE = GENOTYPE_select))
+}                
+                
 ## Annotate CpGs with GENCODE database                
 # Download GENCODE gene annotation file GTF: https://www.gencodegenes.org/human/ https://www.gencodegenes.org/human/release_33lift37.html
 # GENCODE_GTF <- rtracklayer::import("./Data/gencode.v33lift37.annotation.gtf.gz", format = "gtf")

@@ -14,7 +14,8 @@ function_list <- c("round_pad",
                    "UCSCtoGRanges",
                    "corPlot",
                    "extractSNPdat",
-                   "CpGAnnot_GENCODE")
+                   "CpGAnnot_GENCODE"，
+                   "matrixHeatmap")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
                 
@@ -605,3 +606,83 @@ CpGAnnot_GENCODE <- function(GENCODE_GTF, cpg, arrayType, win = 1000000)
    return(CpG_annot_full_nearby_summarise)
 }
 
+                
+                
+# ## Visualize a matrix value with heatmap - it is useful to visualize correlation matrix
+# data(iris)
+# mat = as.matrix(iris[,1:4])
+# res = matrixHeatmap(mat, legendName = "Correlation")
+# res = matrixHeatmap(mat, showValue = TRUE, marksize = 5, legendName = "Correlation")
+# res
+# ## Save it as tiff file
+# matrixHeatmap(mat, filename = "matrixHeatmap_irisExample")
+matrixHeatmap<-function(mat, corrMat = FALSE, xlab = NULL, ylab = NULL, showValue = FALSE, marksize = 2, adjustMethod = "holm", legendName = "NULL", width = 5, height = 5, res = 300, filename = NULL)
+{
+  library(reshape2)
+  library(RColorBrewer)
+  library(ggplot2)
+  library(psych)
+  
+  if(corrMat)
+  {
+    r = mat
+    showValue = F
+  } else {
+    corTest = corr.test(mat, adjust = adjustMethod)
+    r = corTest$r
+    poriginal = padjust = corTest$p
+    
+    poriginal[upper.tri(poriginal)] <- t(poriginal)[upper.tri(poriginal)]
+    padjust[lower.tri(padjust)] <- t(padjust)[lower.tri(padjust)]
+    
+    # For melt() to work seamlessly, myData has to be a matrix.
+    longpadjust = melt(padjust)
+  }
+  
+  longData <- melt(r)
+  
+  longData[,1] = factor(longData[,1], levels = rownames(r))
+  longData[,2] = factor(longData[,2], levels = colnames(r))
+  
+  colnames(longData) = c("row","col","value")
+  
+  if(!corrMat)
+  {
+    colnames(longpadjust) = c("row","col","value")
+    
+    longData$mark = sprintf("%.2f", longData$value)
+    twoStar = longpadjust$value<0.01
+    oneStar = longpadjust$value<0.05 & longpadjust$value>=0.01
+    if(sum(twoStar)>0) longData$mark[twoStar] = paste0(longData$mark[twoStar],"\n**")
+    if(sum(oneStar)>0) longData$mark[oneStar] = paste0(longData$mark[oneStar],"\n*")
+  }
+  
+  # Define palette
+  myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")), space="Lab")
+  
+  # Plot
+  zp1 <- ggplot(longData,
+                aes(x = col, 
+                    y = row, fill = value))
+  zp1 <- zp1 + xlab(xlab) + ylab(ylab)
+  zp1 <- zp1 + geom_tile()
+  if(showValue)   zp1 <- zp1 + geom_text(aes(fill = longData$value, label = longData$mark), size = marksize)
+  zp1 <- zp1 + scale_fill_gradientn(colours = myPalette(100), values = seq(-1.2, 1.2, length = 100), name = legendName)
+  zp1 <- zp1 + scale_x_discrete(expand = c(0, 0))
+  zp1 <- zp1 + scale_y_discrete(expand = c(0, 0))
+  zp1 <- zp1 + coord_equal()
+  zp1 <- zp1 + theme_bw()
+  zp1 <- zp1 + theme(legend.text = element_text(size=5), 
+                     legend.title = element_text(size=9, face = "italic", vjust = 0.2))
+  zp1 <- zp1 + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+  
+  if(!is.null(filename))
+  {
+    tiff(file = paste0(filename,".tiff"), width = width, height = height, unit = "in", res = res, compress = "lzw")
+    print(zp1)  
+    dev.off()
+  } else print(zp1)
+  
+  if(corrMat)   return(list(r=r))
+  if(!corrMat)  return(list(r=r, p=poriginal, p.adj=padjust, adjust.method=adjustMethod))
+}

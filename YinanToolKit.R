@@ -409,7 +409,7 @@ extractSNPdat <- function(snpDB, rsids = NULL, seqnames = NULL, pos = NULL, race
   if(all(is.na(seqnames)))
   {
     message("Locating SNP position...")
-    my_snps <- snpsById(snpDB, rsids)
+    my_snps <- snpsById(snpDB, rsids, ifnotfound='warning')
     my_snps <- sort(my_snps)
   } else {
     my_snps <- GRanges(seqnames = seqnames, ranges = IRanges(start = pos, end = pos), RefSNP_id = rsids)

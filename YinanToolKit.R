@@ -14,7 +14,7 @@ function_list <- c("round_pad",
                    "UCSCtoGRanges",
                    "corPlot",
                    "extractSNPdat",
-                   "CpGAnnot_GENCODE"，
+                   "CpGAnnot_GENCODE",
                    "matrixHeatmap")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))

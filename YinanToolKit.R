@@ -617,7 +617,7 @@ CpGAnnot_GENCODE <- function(GENCODE_GTF, cpg, arrayType, win = 1000000)
 # ## Save it as tiff file
 # matrixHeatmap(mat, filename = "matrixHeatmap_irisExample")
 matrixHeatmap<-function(mat, corrMat = FALSE, xlab = NULL, ylab = NULL, showValue = FALSE, marksize = 2, adjustMethod = "holm", 
-                        legendName = "NULL", legendLimit = c(-1, 1), width = 5, height = 5, res = 300, filename = NULL)
+                        brewerColor = "RdYlBu", legendName = "NULL", legendLimit = c(-1, 1), width = 5, height = 5, res = 300, filename = NULL)
 {
   library(reshape2)
   library(RColorBrewer)
@@ -659,7 +659,7 @@ matrixHeatmap<-function(mat, corrMat = FALSE, xlab = NULL, ylab = NULL, showValu
   }
   
   # Define palette
-  myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")), space="Lab")
+  myPalette <- colorRampPalette(rev(brewer.pal(11, brewerColor)), space="Lab")
   
   # Plot
   zp1 <- ggplot(longData,
@@ -668,7 +668,7 @@ matrixHeatmap<-function(mat, corrMat = FALSE, xlab = NULL, ylab = NULL, showValu
   zp1 <- zp1 + xlab(xlab) + ylab(ylab)
   zp1 <- zp1 + geom_tile()
   if(showValue)   zp1 <- zp1 + geom_text(aes(fill = longData$value, label = longData$mark), size = marksize)
-  zp1 <- zp1 + scale_fill_gradientn(colours = myPalette(100), values = seq(-1.2, 1.2, length = 100), name = legendName, limits = legendLimit)
+  zp1 <- zp1 + scale_fill_gradientn(colours = myPalette(100), name = legendName, limits = legendLimit)
   zp1 <- zp1 + scale_x_discrete(expand = c(0, 0))
   zp1 <- zp1 + scale_y_discrete(expand = c(0, 0))
   zp1 <- zp1 + coord_equal()

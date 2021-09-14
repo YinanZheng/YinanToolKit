@@ -15,7 +15,8 @@ function_list <- c("round_pad",
                    "corPlot",
                    "extractSNPdat",
                    "CpGAnnot_GENCODE",
-                   "matrixHeatmap")
+                   "matrixHeatmap",
+                   "filter_data")
 
 trash <- sapply(function_list, function(x) suppressWarnings(rm(x)))
                 
@@ -686,4 +687,21 @@ matrixHeatmap<-function(mat, corrMat = FALSE, xlab = NULL, ylab = NULL, showValu
   
   if(corrMat)   return(list(r=r))
   if(!corrMat)  return(list(r=r, p=poriginal, p.adj=padjust, adjust.method=adjustMethod))
+}
+
+
+# Remove polymorphic sites, cross-reactive sites, and non-autosomal sites according to Chen et al.; 
+# in addition, remove low variance sites, as those are unlikely to demonstrate biological signal.
+                 
+# The code is copied from https://raw.githubusercontent.com/cozygene/TCA/master/vignettes/vignette_analysis.R
+filter_data <- function(X, var_th = 0.0001){
+  nonspecific_probes <- read.table("https://raw.githubusercontent.com/cozygene/glint/master/parsers/assets/nonspecific_probes.txt")[,1]
+  XY_probes <- read.table("https://raw.githubusercontent.com/cozygene/glint/master/parsers/assets/HumanMethylationSites_X_Y.txt")[,1]
+  polymorphic_probes <- read.table("https://raw.githubusercontent.com/cozygene/glint/master/parsers/assets/polymorphic_cpgs.txt")[,1]
+  # remove sites with very low variance that are unlikely to exhibit biological signal
+  site.variances <- matrixStats::rowVars(X)
+  names(site.variances) <- rownames(X)
+  low_var_sites <- names(which(site.variances < var_th))
+  exclude <- union(nonspecific_probes,union(XY_probes,union(low_var_sites,polymorphic_probes)))
+  return(X[setdiff(rownames(X),exclude),])
 }

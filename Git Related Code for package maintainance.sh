@@ -47,9 +47,9 @@ git checkout master
 git merge origin/master
 git merge upstream/master
 
-git checkout RELEASE_3_9
-git merge upstream/RELEASE_3_9
-git merge origin/RELEASE_3_9
+git checkout RELEASE_3_10
+git merge upstream/RELEASE_3_10
+git merge origin/RELEASE_3_10
 
 
 git checkout master
@@ -66,16 +66,18 @@ git add -A
 git add DESCRIPTION
 
 
-git commit -m "REMP 1.9.2 updates"
+git commit -m "REMP 1.11.1 updates"
 
 
 
 ### If necessary, update release verion simutanuously
-git checkout RELEASE_3_9
+git checkout RELEASE_3_10
 git cherry-pick master
+
+### For release version (y minus 1)
 ### Fix version bump by editing 'Version:' field of DESCRIPTION, then
 git add DESCRIPTION
-git commit -m "REMP 1.8.2 updates"
+git commit -m "REMP 1.10.1 updates"
 ### 
 
 ### Push and update devel
@@ -84,9 +86,9 @@ git push upstream master
 git push origin master
 
 ### Push and update release (only current release can be updated)
-git checkout RELEASE_3_9
-git push upstream RELEASE_3_9
-git push origin RELEASE_3_9
+git checkout RELEASE_3_10
+git push upstream RELEASE_3_10
+git push origin RELEASE_3_10
 
 
 

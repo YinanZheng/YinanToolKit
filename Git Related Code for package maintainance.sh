@@ -18,7 +18,7 @@ BiocManager::valid()              # checks for out of date packages
 
 ## In the local repository directory, Sync an existing repositories
 cd D:/Github/REMP
-cd /Users/yzk256/Documents/GitHub
+cd /Users/yzk256/Documents/GitHub/REMP
 
 git remote add upstream git@git.bioconductor.org:packages/REMP.git
 

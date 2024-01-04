@@ -393,7 +393,7 @@ corPlot <- function(dat, x, y, xlab = x, ylab = y, xlimit = NULL, ylimit = NULL,
   
   
   if(!is.null(xlimit)) p = p + xlim(xlimit)
-  if(!is.null(ylimit)) p = p + xlim(ylimit)
+  if(!is.null(ylimit)) p = p + ylim(ylimit)
   if(!is.null(main)) p = p + ggtitle(main)
   
   return(p)

@@ -31,9 +31,11 @@ round_pad <- function(x, digits=0)
  format(round(x, digits), nsmall=digits)
 }
 
-descript <- function(dat, var, type = "continuous", digits = 1)
+descript <- function(dat, var, type = "continuous", na.omit = FALSE, digits = 1)
 {
   d <- eval(parse(text = paste0("dat$", var)))
+  if(na.omit) d <- na.omit(d)
+
   if(type == "continuous")
   {
     res <- data.frame(Variable = var,
